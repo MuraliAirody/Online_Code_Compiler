@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
+import boilerPlate from "./boilerPlate";
+import moment from "moment";
+
 
 function App() {
   const [code, setCode] = useState("");
@@ -9,6 +12,17 @@ function App() {
   const [jobId, setJobId] = useState(null);
   const [status, setStatus] = useState(null);
   const [jobDetails, setJobDetails] = useState(null);
+
+  useEffect(() => {
+    setCode(boilerPlate[language]);
+
+    setJobId("");
+    setStatus("");
+    setResult("");
+    
+    setJobDetails("")
+  }, [language]);
+
 
   async function handleSubmit() {
     console.log(code);
@@ -19,9 +33,6 @@ function App() {
     };
 
     try {
-      setJobId("")
-      setStatus("")
-      setResult("")
       const ans = await axios.post("http://localhost:5000/run", payLoad);
       console.log(ans);
       setJobId(ans.data.jobId);
@@ -60,6 +71,22 @@ function App() {
     }
   }
 
+  const renderTimeDetails = () => {
+    if (!jobDetails) {
+      return "";
+    }
+    let { submittedAt, startedAt, completedAt } = jobDetails;
+    let result = "";
+    submittedAt = moment(submittedAt).toString();
+    result += `Job Submitted At: ${submittedAt}  `;
+    if (!startedAt || !completedAt) return result;
+    const start = moment(startedAt);
+    const end = moment(completedAt);
+    const diff = end.diff(start, "seconds", true);
+    result += `Execution Time: ${diff}s`;
+    return result;
+  };
+
   return (
     <>
       <div>
@@ -68,8 +95,13 @@ function App() {
           <select
             value={language}
             onChange={(e) => {
-              setLanguage(e.target.value);
-              console.log(e.target.value);
+              let response = window.confirm(
+                "Waring : if you change the language, all of your previous code will be deleted"
+              );
+              if (response) {
+                setLanguage(e.target.value);
+                console.log(e.target.value);
+              }
             }}
           >
             <option value="java">Java</option>
@@ -95,6 +127,8 @@ function App() {
       <p>{status}</p>
       <p>{jobId ? `Job ID: ${jobId}` : ""}</p>
       <p>{result}</p>
+      <p>{renderTimeDetails()}</p>
+
     </>
   );
 }
