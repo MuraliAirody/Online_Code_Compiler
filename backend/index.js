@@ -2,23 +2,24 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const mongoose = require("mongoose");
+const dotenv = require('dotenv')
+dotenv.config()
 
 const { generateFile } = require("./generateFile");
-const { executeJava } = require("./executeJava");
-const { executePython } = require("./executePython");
-const { executeJS } = require("./executeJavascript");
 
 
 const Job = require("./models/job");
+const { addJobToQueue } = require("./jobQueue");
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
 
 async function dbConnection() {
+  const dbURL = process.env.DB_URL
   try {
     await mongoose.connect(
-      "****"
+      dbURL
     );
     console.log("db connected successfully");
   } catch (error) {
@@ -40,51 +41,18 @@ app.post("/run", async (req, res) => {
     return res.status(500).json({ success: "false", error: "code is empty" });
   }
 
-  let job;
-  try {
     const filepath = await generateFile(language, code);
 
-    job = await new Job({ language, filepath }).save();
+    const job = await new Job({ language, filepath }).save();
     if (job === undefined) {
       throw Error(`cannot find Job with id ${jobId}`);
     }
     const jobId = job["_id"];
+    addJobToQueue(jobId);
     console.log("job: ", job);
 
-    res.status(200).json({ success: true, jobId });
-
-    let output;
-    job["startedAt"] = new Date();
-    if (language === "java") {
-      output = await executeJava(filepath);
-    } else if (language === "py") {
-      output = await executePython(filepath);
-    } else if(language === "js"){
-      console.log("js here");
-      output = await executeJS(filepath)
-      console.log('output ',output);
-    }
-
-    job["completedAt"] = new Date();
-    job["status"] = "success";
-    job["output"] = output;
-
-    await job.save();
-
-    console.log(job);
-    // return res.json({ filePath, output });
-  } catch (error) {
-
-    if(job){
-      job['completedAt'] = new Date()
-      job['status']="error"
-      job['output']=JSON.stringify(error)
-      await job.save()
-  }
-
-    console.error(JSON.stringify(error));
-    // return res.status(500).json(error);
-  }
+    res.status(201).json({ jobId });
+ 
 });
 
 app.get("/status", async (req, res) => {
