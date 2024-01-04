@@ -4,6 +4,12 @@ import "./App.css";
 import boilerPlate from "./boilerPlate";
 import moment from "moment";
 
+import AceEditor from "react-ace";
+import "ace-builds/src-noconflict/mode-javascript";
+import "ace-builds/src-noconflict/theme-monokai";
+import "ace-builds/src-noconflict/ext-language_tools";
+ace.config.set('basePath', 'path-to-ace');
+
 
 function App() {
   const [code, setCode] = useState("");
@@ -19,10 +25,9 @@ function App() {
     setJobId("");
     setStatus("");
     setResult("");
-    
-    setJobDetails("")
-  }, [language]);
 
+    setJobDetails("");
+  }, [language]);
 
   async function handleSubmit() {
     console.log(code);
@@ -109,7 +114,7 @@ function App() {
             <option value="js">Javascript</option>
           </select>
         </div>
-        <textarea
+        {/* <textarea
           name=""
           id=""
           cols="80"
@@ -118,7 +123,22 @@ function App() {
           onChange={(e) => {
             setCode(e.target.value);
           }}
-        ></textarea>
+        ></textarea> */}
+
+        <AceEditor
+          className="ace-editor"
+          value={code}
+          mode={language === 'js'?'javascript':(language==='py'?'python':'java')}
+          theme="monokai"
+          fontSize="16px"
+          highlightActiveLine={true}
+          setOptions={{
+            enableLiveAutocompletion: true,
+            showLineNumbers: true,
+            tabSize: 2,
+          }}
+          onChange={(newCode) => setCode(newCode)}
+        />
 
         <div>
           <button onClick={handleSubmit}>Submit</button>
@@ -128,7 +148,6 @@ function App() {
       <p>{jobId ? `Job ID: ${jobId}` : ""}</p>
       <p>{result}</p>
       <p>{renderTimeDetails()}</p>
-
     </>
   );
 }
