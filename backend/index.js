@@ -10,6 +10,7 @@ const { generateFile } = require("./generateFile");
 
 const Job = require("./models/job");
 const { addJobToQueue } = require("./jobQueue");
+const Test = require("./db/testDB");
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -73,6 +74,20 @@ app.get("/status", async (req, res) => {
   return res.status(200).json({ success: true, job });
 });
 
+app.get('/data', async (req, res) => {
+  try {
+      const result = await Test.findOne({ result_id: 1 });
+
+      return res.json(result);
+  } catch (error) {
+      console.error('Error fetching data from MongoDB:', error);
+      return res.status(500).send('Internal Server Error');
+    }
+});
+
 app.listen(5000, () => {
   console.log("listening on port 5000");
 });
+
+
+
